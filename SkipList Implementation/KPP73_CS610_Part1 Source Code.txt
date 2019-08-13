@@ -1,0 +1,203 @@
+// Ordered Dictionary ADT
+import java.util.Scanner;
+public interface ODADT {
+	public static void main(String[] args) {
+		System.out.println("Kishan Patel (CS610)");
+		System.out.println("SkipList Data Structure Implementation (Part 1)");
+	Scanner input = new Scanner(System.in); char yn;
+	SkipList beta = new SkipList();
+	do {
+		System.out.println("Let Us Test The SkipList Data Structure\n");
+		System.out.println("1. Insert Element\n");
+		System.out.println("2. Find Element\n");
+		System.out.println("3. Closest Key After\n");
+		System.out.println("4. Remove Element\n");
+		System.out.println("5. Clear List\n");
+		int selection = input.nextInt();
+		
+		switch(selection) {
+		case 1:
+			System.out.println("Please Enter Element to Insert");
+			int ins = input.nextInt();
+			beta.insertElement(ins);
+			System.out.println("Element " + ins + " was Inserted");
+			break;
+		case 2:
+			System.out.println("Please Enter Element to Find");
+			int fin = input.nextInt();
+			beta.findElement(fin);
+			if (beta.findElement(fin) == -1) {
+			System.out.println("Element " + fin + " was not found");} 
+			break;
+		case 3:
+			System.out.println("Please Enter Key to Search");
+			int key = input.nextInt();
+			beta.closestKeyAfter(key);
+			if (beta.closestKeyAfter(key) == -1) {
+				System.out.println("Element after " + key + " does not exist in SkipList");}
+			break;
+		case 4:
+			System.out.println("Please Enter Elemet to Remove");
+			int rem = input.nextInt();
+			beta.removeElement(rem);
+			break;
+		case 5:
+			beta.clear();
+			break;
+		}
+		
+		beta.printDictionary();
+		System.out.println("Want to continue? Type in 'Y' or 'N'\n");
+		yn = input.next().charAt(0);
+	} while (yn == 'Y' || yn == 'y');
+}
+}
+// SkipList Implementation
+import java.util.Random;
+public class SkipList implements ODADT {
+	private Random coin; private Nodes first; static int Levels = 10;
+	// coin is to determine if insert should create a new level
+	public SkipList () {
+		coin = new Random(); first = new Nodes(-1);
+	}
+	// Override the insertElement method defined in 'Nodes.java'
+	// coin = 0 --> Heads, insert on next level
+	// coin != 0 --> Tails, don't add on next level
+	public void insertElement(int data) {
+		Nodes node = new Nodes(data);
+		for (int i = 0; i < Levels; i++) {
+			int coinx = coin.nextInt((int) Math.pow(2, i));
+			if (coinx != 0) {
+				break;
+			}
+			first.insertElement(node,  i);
+		}
+	}
+	// Returns the highest level where the element node can be found
+	public int findElement(int data) {
+		for (int i = Levels - 1; i >= 0; i--) {
+			if ((first.findElement(data, i)) != null) {
+				System.out.println("Element " + data + " found at Level " + i);return i;
+			}
+		} return -1;
+	}
+	
+	// Gives the smallest key after key k from the highest level
+	public int closestKeyAfter(int k) {
+		Nodes knode = null;
+		for (int i = Levels - 1; i >= 0; i--) {
+			if ((knode = first.findElement(k, i)) != null) {
+				if (knode.getNext(i) != null) {
+					int x =  knode.getNext(i).data;
+					System.out.println("Closest Key After " + k + " is " + x);return x;
+				}
+			}
+		} return -1;
+	}
+	
+	public Nodes findNode(int data) {
+		Nodes fnode = null;
+		for (int i = Levels - 1; i >=0; i--) {
+			if ((fnode = first.findElement(data, i))!= null) {
+				break;
+			}
+		} return fnode; //fnode will be null if there is no such node
+	}
+	
+	public void removeElement(int data) {
+		Nodes rnode = findNode(data);
+		if (rnode == null) {
+			System.out.println("Element " + data + " was not in SkipList");return;
+		}
+		rnode.data = -1;
+		for (int i = 0; i < Levels; i++) {
+			first.setUp(i);
+		}System.out.println("Element " + data + " was removed from SkipList");
+	}
+	
+	public void printDictionary() {
+		System.out.println("\n" + "Skip List: ");
+		for (int i = 0; i < Levels; i++) {
+			first.lvlprint(i);
+		} System.out.println("");
+	}
+	
+	public void clear() {
+		clear();
+	}
+}
+
+// Nodes Class Object
+public class Nodes {
+	int data;
+	Nodes[] nodes = new Nodes[SkipList.Levels];
+	
+	// Setting data of particular node
+	public Nodes(int data) {
+		this.data = data;
+	}
+	// Setting next node
+	public void setNext(Nodes nxtnode, int val) {
+		nodes[val] = nxtnode;
+	}
+	
+	// Getting next node
+	public Nodes getNext(int val) {
+		return nodes[val];
+	}
+	
+	// Linking 
+	public void setUp(int data) {
+		Nodes current = this.getNext(data);
+		while (current != null && current.getNext(data) != null) {
+			if (current.getNext(data).data == -1) {
+				Nodes nxt = current.getNext(data);
+				Nodes nxt1 = nxt.getNext(data);
+				current.setNext(nxt1, data);
+				return;
+			}
+			current = current.getNext(data);
+		}
+	}
+	// Find Element (ProbSkipListPPT)
+	public Nodes findElement (int data, int val) {
+		Nodes p = null;
+		Nodes current = this.getNext(val);
+		while (current != null && current.data <= data) {
+			if (current.data == data) {
+				p = current; break;
+			}
+			current = current.getNext(val);
+		}
+		return p;
+	}
+	// Insert Element (linked only, skip list implementation in SkipList class)
+	public void insertElement(Nodes nxtnode, int val) {
+		Nodes current = getNext(val);
+		// Empty list
+		if (current == null) {
+			this.setNext(nxtnode, val); return;
+		}
+		// New element less than current element
+		if (nxtnode.data < current.data) {
+			this.setNext(nxtnode, val);nxtnode.setNext(current, val);return;
+		}
+		// New element greater than current element
+		while (current.getNext(val) != null && current.data < nxtnode.data && current.getNext(val).data < nxtnode.data) {
+			current = current.getNext(val);
+		}
+		Nodes nxt = current.getNext(val);
+		current.setNext(nxtnode, val);nxtnode.setNext(nxt, val);
+	}
+	// Print the level of node
+	public void lvlprint (int val) {
+		String p = "Level #" + val + ": ";
+		Nodes current = getNext(val);
+		// Finding highest level; if no higher level, it will be null.
+		while (current != null) {
+			p += current.data + " "; current = current.getNext(val);
+		}
+		System.out.println(p);
+	}
+}
+

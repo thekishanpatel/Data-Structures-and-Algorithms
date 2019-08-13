@@ -1,0 +1,264 @@
+// Ordered Dictionary ADT
+public interface ODADT {
+	int Levels = 10;
+	public void clear();
+	public int findElement(int data);
+	public void insertElement(int data);
+	public void removeElement(int data);
+	public int closestKeyAfter(int data);
+	public void printDictionary();
+}
+
+// SkipList Implementation
+import java.util.Random;
+public class SkipList implements ODADT{
+	private Random coin; private Nodes first; 
+	// coin is to determine if insert should create a new level
+	public SkipList () {
+		coin = new Random(); first = new Nodes(-1);
+	}
+	// Override the insertElement method defined in 'Nodes.java'
+	// coin = 0 --> Heads, insert on next level
+	// coin != 0 --> Tails, don't add on next level
+	
+	@Override
+	public void insertElement(int data) {
+		Nodes node = new Nodes(data);
+		for (int i = 0; i < Levels; i++) {
+			int coinx = coin.nextInt((int) Math.pow(2, i));
+			if (coinx != 0) {
+				break;
+			}
+			first.insertElement(node,  i);
+		}
+	}
+	// Returns the highest level where the element node can be found
+	
+	@Override
+	public int findElement(int data) {
+		for (int i = Levels - 1; i >= 0; i--) {
+			if ((first.findElement(data, i)) != null) {
+				System.out.println("Element " + data + " found at Level " + i);return i;
+			}
+		} return -1;
+	}
+	
+	// Gives the smallest key after key k from the highest level
+	
+	@Override
+	public int closestKeyAfter(int k) {
+		Nodes knode = null;
+		for (int i = Levels - 1; i >= 0; i--) {
+			if ((knode = first.findElement(k, i)) != null) {
+				if (knode.getNext(i) != null) {
+				int x = knode.getNext(i).data;
+				System.out.println("Closest Key After " + k + " is " + x);return x;
+			}
+		}
+		} return -1;
+	}
+	
+	public Nodes findNode(int data) {
+		Nodes fnode = null;
+		for (int i = Levels - 1; i >=0; i--) {
+			if ((fnode = first.findElement(data, i))!= null) {
+				break;
+			}
+		} return fnode; //fnode will be null if there is no such node
+	}
+	
+	@Override
+	public void removeElement(int data) {
+		Nodes rnode = findNode(data);
+		if (rnode == null) {
+			System.out.println("Element " + data + " was not in SkipList");return;
+		}
+		rnode.data = -1;
+		for (int i = 0; i < Levels; i++) {
+			first.setUp(i);
+		}System.out.println("Element " + data + " was removed from SkipList");
+	}
+	
+	@Override
+	public void printDictionary() {
+		System.out.println("\n" + "Skip List: ");
+		for (int i = 0; i < Levels; i++) {
+			first.lvlprint(i);
+		} System.out.println("");
+	}
+	
+	@Override
+	public void clear() {
+		clear();
+	}
+}
+
+// Nodes Class Object
+public class Nodes {
+	int data;
+	Nodes[] nodes = new Nodes[ODADT.Levels];
+	
+	// Setting data of particular node
+	public Nodes(int data) {
+		this.data = data;
+	}
+	// Setting next node
+	public void setNext(Nodes nxtnode, int val) {
+		nodes[val] = nxtnode;
+	}
+	
+	// Getting next node
+	public Nodes getNext(int val) {
+		return nodes[val];
+	}
+	
+	// Linking 
+	public void setUp(int data) {
+		Nodes current = this.getNext(data);
+		while (current != null && current.getNext(data) != null) {
+			if (current.getNext(data).data == -1) {
+				Nodes nxt = current.getNext(data);
+				Nodes nxt1 = nxt.getNext(data);
+				current.setNext(nxt1, data);
+				return;
+			}
+			current = current.getNext(data);
+		}
+	}
+	// Find Element (ProbSkipListPPT)
+	public Nodes findElement (int data, int val) {
+		Nodes p = null;
+		Nodes current = this.getNext(val);
+		while (current != null && current.data <= data) {
+			if (current.data == data) {
+				p = current; break;
+			}
+			current = current.getNext(val);
+		}
+		return p;
+	}
+	// Insert Element (linked only, skip list implementation in SkipList class)
+	public void insertElement(Nodes nxtnode, int val) {
+		Nodes current = getNext(val);
+		// Empty list
+		if (current == null) {
+			this.setNext(nxtnode, val); return;
+		}
+		// New element less than current element
+		if (nxtnode.data < current.data) {
+			this.setNext(nxtnode, val);nxtnode.setNext(current, val);return;
+		}
+		// New element greater than current element
+		while (current.getNext(val) != null && current.data < nxtnode.data && current.getNext(val).data < nxtnode.data) {
+			current = current.getNext(val);
+		}
+		Nodes nxt = current.getNext(val);
+		current.setNext(nxtnode, val);nxtnode.setNext(nxt, val);
+	}
+	// Print the level of node
+	public void lvlprint (int val) {
+		String p = "Level #" + val + ": ";
+		Nodes current = getNext(val);
+		// Finding highest level; if no higher level, it will be null.
+		while (current != null) {
+			p += current.data + " "; current = current.getNext(val);
+		}
+		System.out.println(p);
+	}
+}
+
+// Test Application
+import java.util.Random; 
+import java.util.concurrent.TimeUnit; 
+import java.util.Arrays;
+
+public class KPP73_TestApp {
+
+	public static void main(String[] args) {
+		long[][] avetime;
+		avetime = new long [11][5];int t = 0;
+		for (int s = 128; s<= 131072; s = s*2) {
+		SkipList alpha = new SkipList();
+		Random rand = new Random(); 
+		int is = s; // Enter Input Size Here
+		int r; int[] y = new int[is]; 
+		
+		
+		for (int i = 0; i < is; i++) {
+			r = 1 + rand.nextInt(100000);
+			y[i] = r;}
+		// Initial insertElement
+		for (int x : y) {
+			alpha.insertElement(x); }
+		alpha.printDictionary();
+		
+		//Find Element (success)
+		long fs1 = System.nanoTime();
+		for (int i = 0; i < 50; i++) {
+			alpha.findElement(y[64]);} 
+		long fe1 = System.nanoTime();
+		long sucfind = ((fe1 - fs1)/50);
+		System.out.println("\n");
+		
+		//Find Element (unsuccessful)
+		long fs2 = System.nanoTime();
+		for (int i = 0; i < 50; i++) {
+			if (alpha.findElement(500000) == -1) {
+				System.out.println("Element not found in SkipList");
+			}}
+		long fe2 = System.nanoTime();
+		long unsucfind = ((fe2 - fs2)/50);
+		System.out.println("\n");
+		
+		//Closest Key After
+		int crs = rand.nextInt(is) + 1;
+		long cs = System.nanoTime();
+		for (int i = 0; i < 50; i++) {
+			alpha.closestKeyAfter(y[crs]);}
+		long ce = System.nanoTime();
+		System.out.println("\n");
+		
+		// Insert and Remove
+		long removetime = 0;
+		long inserttime = 0;
+		int irs = rand.nextInt(is) + 1;
+		for (int i = 0; i < 50; i++) {
+			long rs = System.nanoTime();
+			alpha.removeElement(y[irs]);
+			long re = System.nanoTime();
+			removetime = removetime + (re - rs);
+			
+			long fsi = System.nanoTime();
+			alpha.insertElement(y[irs]);
+			long fei = System.nanoTime();
+			System.out.println("Element " + y[irs] + " was inserted into SkipList");
+			inserttime = inserttime + (fei - fsi);
+		}
+		
+		avetime[t][0] = is;
+		avetime[t][1] = ((sucfind + unsucfind)/50);
+		avetime[t][2]= ((ce - cs)/50);
+		avetime[t][3] = (removetime/50);
+		avetime[t][4] = (inserttime/50);
+		
+		t++;
+		alpha.printDictionary();
+		} 
+		
+		String s1 = "Input Size"; 
+		String s2 = "findElement(ns)";
+		String s3 = "closestKeyAfter(ns)"; 
+		String s4 = "removeElement(ns)";
+		String s5 = "insertElement(ns)";
+		System.out.println("=====================================================================================================");
+		System.out.printf("%19s|%19s|%19s|%19s|%19s|", s1, s2, s3, s4, s5);
+		System.out.printf("\n%19s|%19s|%19s|%19s|%19s|", " ", " ", " ", " ", " ");
+		for (int i = 0; i < avetime.length; i++) {
+			System.out.println("\n");
+			for (int j = 0; j < 5; j++) {
+				System.out.printf("%19s|",avetime[i][j]);
+			}
+		}
+		System.out.println("\n=====================================================================================================");
+}
+}
