@@ -95,6 +95,7 @@ class DoublyLinkedList:
         cnode = self.start_node
         while cnode != None:
             if cnode.data == key:
+                print('{} is in the list'.format(key))
                 return(cnode)
             cnode = cnode.next1
         if cnode == None:
@@ -186,7 +187,13 @@ class DoublyLinkedList:
             p.next1 = n
             n.prev = p
             self.Count -= 1
-
+    
+    def enumerate(self):
+        c = self.start_node;
+        while c != None:
+            yield c
+            c = c.next1
+            
     def size(self):
         '''Returns the Size of the List'''
         return self.Count
